@@ -3,3 +3,5 @@
 /Release
 *.cbi
 *.fct
+*.pdsbak
+*.workspace
