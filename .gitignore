@@ -2,6 +2,8 @@
 /Debug
 /Release
 *.cbi
+*.c~
 *.fct
 *.pdsbak
 *.workspace
+micro_project.txt
