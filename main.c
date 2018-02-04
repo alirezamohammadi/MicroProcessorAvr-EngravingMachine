@@ -83,19 +83,22 @@ void take_head_to_0_0()
         PORTC &= 0x0F;
         PORTC |= step2[(y - 1) % 4];
         delay_ms(delay);
+        show_location();
         if (y == 1)
         {
             PORTC &= 0x0F;
             PORTC |= step2[3];
         }
     }
+    x = y = 0;
     show_location();
 }
 
 //executes after an interrupt (draw new design while micro is drawing another one OR stop drwaing key press)
 void reset_system()
 {
-    glcd_outtextxy(70, 50, "None    ");
+    PORTD .6 = false; //laser off
+    glcd_outtextxy(70, 50, "None     ");
     clear_rigth_side_of_lcd();
     take_head_to_0_0();
 }
@@ -105,67 +108,98 @@ void goto_xy(int x_dest, int y_dest)
     int i = 0, j = 0;
     if (x_dest > x)
     {
-        for(j = x; j <= x_dest; j++)
+        for (j = x; j <= x_dest; j++)
         {
+
+            if (drawing_stopped)
+            {
+                reset_system();
+                return;
+            }
+
             x = j;
             delay_ms(delay);
             PORTC &= 0xF0; //mask second 4 bit
             PORTC |= step1[j % 4];
-            
-            if(PORTD .6){
-                glcd_setpixel(x,y);
+
+            if (PORTD .6)
+            {
+                glcd_setpixel(x, y);
             }
 
-            show_location();    
+            show_location();
         }
     }
     else if (x_dest < x)
     {
-        for(j = x; j >= x_dest; j--)
+        for (j = x; j >= x_dest; j--)
         {
+
+            if (drawing_stopped)
+            {
+                reset_system();
+                return;
+            }
+
             x = j;
             delay_ms(delay);
             PORTC &= 0xF0; //mask second 4 bit
             PORTC |= step1[j % 4];
-            
-            if(PORTD .6){
-                glcd_setpixel(x,y);
+
+            if (PORTD .6)
+            {
+                glcd_setpixel(x, y);
             }
 
-            show_location();    
+            show_location();
         }
     }
 
     if (y_dest > y)
     {
-        for(i = y; i <= y_dest; i++)
+        for (i = y; i <= y_dest; i++)
         {
+            if (drawing_stopped)
+            {
+                reset_system();
+                return;
+            }
+
             y = i;
             delay_ms(delay);
             PORTC &= 0x0F; //mask second 4 bit
             PORTC |= step2[i % 4];
-            
-            if(PORTD .6){
-                glcd_setpixel(x,y);
+
+            if (PORTD .6)
+            {
+                glcd_setpixel(x, y);
             }
 
-            show_location();    
+            show_location();
         }
     }
     else if (y_dest < y)
     {
-        for(i = y; i >= y_dest; i--)
+        for (i = y; i >= y_dest; i--)
         {
+
+            if (drawing_stopped)
+            {
+                reset_system();
+                return;
+            }
+
             y = i;
             delay_ms(delay);
             PORTC &= 0x0F; //mask second 4 bit
             PORTC |= step2[i % 4];
-            
-            if(PORTD .6){
-                glcd_setpixel(x,y);
+
+            if (PORTD .6)
+            {
+                glcd_setpixel(x, y);
             }
 
-            show_location();    
+            show_location();
         }
     }
 }
@@ -325,17 +359,17 @@ void engraving_design(flash unsigned char *design)
 
 void draw_rectaangle()
 {
+    drawing_stopped = false;
     goto_xy(10, 10);
-     
+
     PORTD .6 = true;
-    goto_xy(50,10);
-    goto_xy(50,40);
-    goto_xy(10,40);
-    goto_xy(10,10);
+    goto_xy(50, 10);
+    goto_xy(50, 40);
+    goto_xy(10, 40);
+    goto_xy(10, 10);
     PORTD .6 = false;
-    
+
     reset_system();
-    
 }
 
 // External Interrupt 0 service routine
@@ -387,7 +421,7 @@ interrupt[EXT_INT0] void ext_int0_isr(void)
         else
         {
             glcd_outtextxy(70, 50, "Rectangle");
-            engraving_design(rectangle);
+            draw_rectaangle();
         }
         break;
     case 4:
@@ -439,7 +473,7 @@ void main(void)
     show_location();
     sprintf(buffer, "%2d", speed);
     glcd_outtextxy(70, 30, buffer);
-    glcd_outtextxy(70, 50, "None    ");
+    glcd_outtextxy(70, 50, "None     ");
 
     // External Interrupt(s) initialization
     // INT0: On
@@ -454,8 +488,7 @@ void main(void)
 // Global enable interrupts
 #asm("sei")
 
-    //Hold AVR ON to takes inputs from keypad   
-    draw_rectaangle();
-    //while (1)
-    //    ;
+    //Hold AVR ON to takes inputs from keypad
+    while (1)
+        ;
 }
